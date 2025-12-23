@@ -116,7 +116,7 @@ def upload_pdf(file) -> tuple[bool, str, Optional[dict]]:
     """Upload PDF to API"""
     try:
         files = {"file": (file.name, file, "application/pdf")}
-        response = requests.post(f"{API_BASE_URL}/upload", files=files, timeout=30)
+        response = requests.post(f"{API_BASE_URL}/upload", files=files, timeout=300)
         
         if response.status_code == 200:
             # Auto-refresh stats after successful upload
