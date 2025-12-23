@@ -1,0 +1,16 @@
+langchain==0.3.27
+langchain_core
+langchain_community
+langchain_groq
+python-dotenv
+pdfplumber
+pymupdf
+pytesseract
+camelot-py
+langchain-huggingface
+faiss-cpu
+sentence-transformers
+fastapi
+uvicorn
+langchain-huggingface
+python-multipart

@@ -1,0 +1,68 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+
+# Environment Variables
+.env
+.env.*
+*.key
+
+
+# Jupyter
+.ipynb_checkpoints/
+
+
+# Logs
+*.log
+
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+
+# Uploaded / User Files
+upload/
+uploads/
+*.pdf
+
+
+# Vector Stores (FAISS)
+faiss_index/
+vectorstore/
+*.faiss
+*.pkl
+
+
+# Streamlit
+.streamlit/secrets.toml
+
+
+# Cache / Temp
+.cache/
+tmp/
+temp/
+
+
+# Build / Distribution
+build/
+dist/
