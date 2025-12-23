@@ -29,24 +29,20 @@ Built using **LangChain**, **FAISS**, **Groq LLM**, **FastAPI**, and **Streamlit
 ## 📁 Project Structure
 
 ```
-.
-├── __pycache__/
+
 ├── .venv/                      # Virtual environment
-├── backend/
-│   ├── __pycache__/
+├── backend/|
 │   └── api.py                  # FastAPI backend server
 ├── frontend/
 │   └── stream.py               # Streamlit UI application
-├── Rag/
-│   ├── __pycache__/
+├── rag/│  
 │   ├── combine.py              # Document combination utilities
 │   ├── lang_doc.py             # LangChain document processing
-│   ├── rag.py                  # Core RAG implementation
+│   ├── chain.py                  # Core RAG implementation
 │   └── smart_chunking.py       # Advanced chunking strategies
 ├── upload/                     # Uploaded documents storage
 ├── vectorstore/                # FAISS vector database
-├── .env                        # Environment variables (API keys)
-├── doc.pdf                     # Sample document
+├── .env                        # Environment variables (API keys)|
 └── requirements.txt            # Python dependencies
 ```
 
@@ -61,7 +57,7 @@ Built using **LangChain**, **FAISS**, **Groq LLM**, **FastAPI**, and **Streamlit
 
 ### 1. Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/tech5s5/multi-modal-rag-system.git
 cd multi-modal-rag-system
 ```
 
