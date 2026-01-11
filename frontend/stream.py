@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 from typing import Optional
 import json
+import os
 
 # Page configuration
 st.set_page_config(
@@ -77,7 +78,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuration
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = os.getenv("BACKEND_URL")
 
 # Initialize session state
 if 'chat_history' not in st.session_state:
