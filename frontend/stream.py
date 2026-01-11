@@ -5,6 +5,9 @@ import time
 from typing import Optional
 import json
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Page configuration
 st.set_page_config(
@@ -78,7 +81,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuration
-API_BASE_URL = os.getenv("BACKEND_URL")
+API_BASE_URL = os.getenv('BACKEND_URL')
+print(API_BASE_URL)
 
 # Initialize session state
 if 'chat_history' not in st.session_state:
