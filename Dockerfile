@@ -13,6 +13,6 @@ RUN pip install --upgrade pip setuptools wheel \
 
 COPY . .
 
-EXPOSE 10000
+EXPOSE 7860
 
-CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "10000"]
+CMD ["uvicorn", "backend.api:app", "--host", "0.0.0.0", "--port", "7860"]
