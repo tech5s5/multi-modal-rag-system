@@ -95,69 +95,109 @@ if 'system_stats' not in st.session_state:
     st.session_state.system_stats = None
 
 # Helper functions
+# Replace your helper functions in the Streamlit app with these improved versions
+
 def check_api_health() -> Optional[dict]:
     """Check if API is healthy and return status"""
     try:
         response = requests.get(f"{API_BASE_URL}/health", timeout=5)
-        if response.status_code == 200:
-            return response.json()
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.ConnectionError:
+        st.error(f"❌ Cannot connect to API at {API_BASE_URL}")
+        st.info("Make sure FastAPI is running: `uvicorn main:app --reload`")
         return None
-    except requests.exceptions.RequestException:
+    except requests.exceptions.Timeout:
+        st.warning("⏱️ API request timed out")
+        return None
+    except requests.exceptions.JSONDecodeError:
+        st.error(f"❌ Invalid response from API. Response text: {response.text[:200]}")
+        return None
+    except Exception as e:
+        st.error(f"❌ Unexpected error: {str(e)}")
         return None
 
 def get_system_stats() -> Optional[dict]:
     """Fetch system statistics"""
     try:
         response = requests.get(f"{API_BASE_URL}/stats", timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            st.session_state.system_stats = data  # Store in session state
-            return data
+        response.raise_for_status()
+        data = response.json()
+        st.session_state.system_stats = data
+        return data
+    except requests.exceptions.ConnectionError:
+        st.warning(f"Cannot fetch stats from {API_BASE_URL}/stats")
         return None
-    except requests.exceptions.RequestException:
+    except requests.exceptions.JSONDecodeError as e:
+        st.error(f"Invalid JSON response: {response.text[:200]}")
+        return None
+    except Exception as e:
+        st.warning(f"Stats unavailable: {str(e)}")
         return None
 
 def upload_pdf(file) -> tuple[bool, str, Optional[dict]]:
     """Upload PDF to API"""
     try:
         files = {"file": (file.name, file, "application/pdf")}
-        response = requests.post(f"{API_BASE_URL}/upload", files=files, timeout=300)
+        response = requests.post(
+            f"{API_BASE_URL}/upload", 
+            files=files, 
+            timeout=300
+        )
         
+        # Check if response is successful
         if response.status_code == 200:
-            # Auto-refresh stats after successful upload
-            get_system_stats()
-            return True, "Success", response.json()
+            try:
+                result = response.json()
+                get_system_stats()  # Auto-refresh stats
+                return True, "Success", result
+            except requests.exceptions.JSONDecodeError:
+                return False, f"Invalid response format: {response.text[:200]}", None
         else:
-            error_detail = response.json().get('detail', 'Unknown error')
-            return False, f"Error: {error_detail}", None
+            try:
+                error_detail = response.json().get('detail', response.text)
+            except:
+                error_detail = response.text
+            return False, f"Error {response.status_code}: {error_detail}", None
+            
+    except requests.exceptions.ConnectionError:
+        return False, f"Cannot connect to {API_BASE_URL}. Is the server running?", None
     except requests.exceptions.Timeout:
         return False, "Request timeout. File may be too large.", None
-    except requests.exceptions.RequestException as e:
-        return False, f"Connection error: {str(e)}", None
+    except Exception as e:
+        return False, f"Unexpected error: {str(e)}", None
 
 def query_rag(question: str) -> tuple[bool, str]:
+    """Query the RAG system"""
     try:
         response = requests.post(
             f"{API_BASE_URL}/query",
-            json={"input": question},   # ✅ FIX
-            timeout=30
+            json={"input": question},
+            timeout=30,
+            headers={"Content-Type": "application/json"}
         )
-
+        
+        
         if response.status_code == 200:
-            data = response.json()
-            get_system_stats()
-            return True, data.get("response", "No response")
+            try:
+                data = response.json()
+                get_system_stats()  # Auto-refresh stats
+                return True, data.get("response", "No response")
+            except requests.exceptions.JSONDecodeError:
+                return False, f"Invalid JSON response: {response.text[:200]}"
         else:
             try:
                 error_detail = response.json().get("detail", response.text)
-            except ValueError:
+            except:
                 error_detail = response.text
-            return False, f"Error: {error_detail}"
-
+            return False, f"Error {response.status_code}: {error_detail}"
+            
+    except requests.exceptions.ConnectionError:
+        return False, f"Cannot connect to {API_BASE_URL}/query"
     except requests.exceptions.Timeout:
         return False, "Query timeout. Please try again."
-    except requests.exceptions.RequestException as e:
-        return False, f"Connection error: {str(e)}"
+    except Exception as e:
+        return False, f"Unexpected error: {str(e)}"
 
 
 # Sidebar
