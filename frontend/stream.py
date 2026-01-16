@@ -81,8 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Configuration
-API_BASE_URL = os.getenv('BACKEND_URL')
-print(API_BASE_URL)
+API_BASE_URL = "https://tech5-docu-backend.hf.space"
 
 # Initialize session state
 if 'chat_history' not in st.session_state:
