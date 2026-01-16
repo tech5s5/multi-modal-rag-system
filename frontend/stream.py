@@ -136,26 +136,29 @@ def upload_pdf(file) -> tuple[bool, str, Optional[dict]]:
         return False, f"Connection error: {str(e)}", None
 
 def query_rag(question: str) -> tuple[bool, str]:
-    """Query the RAG system"""
     try:
         response = requests.post(
             f"{API_BASE_URL}/query",
-            params={"input": question},
+            json={"input": question},   # ✅ FIX
             timeout=30
         )
-        
+
         if response.status_code == 200:
             data = response.json()
-            # Auto-refresh stats after successful query
             get_system_stats()
-            return True, data.get('response', 'No response')
+            return True, data.get("response", "No response")
         else:
-            error_detail = response.json().get('detail', 'Unknown error')
+            try:
+                error_detail = response.json().get("detail", response.text)
+            except ValueError:
+                error_detail = response.text
             return False, f"Error: {error_detail}"
+
     except requests.exceptions.Timeout:
         return False, "Query timeout. Please try again."
     except requests.exceptions.RequestException as e:
         return False, f"Connection error: {str(e)}"
+
 
 # Sidebar
 with st.sidebar:
