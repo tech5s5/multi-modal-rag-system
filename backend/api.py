@@ -7,11 +7,24 @@ from rag.chain import store_documents, load_documents, get_rag_chain
 from langchain_huggingface import HuggingFaceEmbeddings
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+from functools import lru_cache
+from pathlib import Path
+
+@lru_cache
+def get_embeddings():
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
+    )
+
+@lru_cache
+def get_vectorstore():
+    return load_documents(embedding_model=get_embeddings())
 
 
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-upload_dir = "upload"
-os.makedirs(upload_dir, exist_ok=True)
+BASE_DIR = Path("/app")
+upload_dir = BASE_DIR / "uploads"
+upload_dir.mkdir(parents=True, exist_ok=True)
+
 
 app = FastAPI(
     title="Multi_Rag_System_API",
@@ -57,10 +70,11 @@ async def health_check():
     """Health check endpoint for monitoring"""
     try:
         # Check if upload directory exists
-        upload_dir_exists = os.path.exists(upload_dir)
+        upload_dir_exists = upload_dir.exists()
+
         
         # Count uploaded files
-        uploaded_files = len([f for f in os.listdir(upload_dir) if f.endswith('.pdf')]) if upload_dir_exists else 0
+        uploaded_files = len(list(upload_dir.glob("*.pdf"))) if upload_dir_exists else 0
         
         return {
             "status": "healthy",
@@ -81,11 +95,11 @@ async def health_check():
 async def get_stats():
     """Get system statistics"""
     return {
-        "stats": system_stats,
-        "uploaded_documents": len([f for f in os.listdir(upload_dir) if f.endswith('.pdf')]),
-        "current_time": datetime.now().isoformat()
-    }
-    
+    "stats": system_stats,
+    "uploaded_documents": len(list(upload_dir.glob("*.pdf"))),
+    "current_time": datetime.now().isoformat()
+}
+
 
 # This Endpoint upload Pdf and store into VectorDatabase
 @app.post("/upload")
@@ -93,7 +107,7 @@ async def upload_file(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
-    file_path = os.path.join(upload_dir, file.filename)
+    file_path = upload_dir / file.filename
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
@@ -103,7 +117,7 @@ async def upload_file(file: UploadFile = File(...)):
     if not chunked_docs:
         raise HTTPException(status_code=500, detail="No content extracted from PDF")
 
-    store_documents(chunked_docs, embeddings)
+    store_documents(chunked_docs, get_embeddings())
     
     # INCREMENT THE COUNTER HERE!
     system_stats["total_uploads"] += 1
@@ -113,22 +127,33 @@ async def upload_file(file: UploadFile = File(...)):
         "chunks_created": len(chunked_docs)
     }
     
+from pydantic import BaseModel
+
+class QueryRequest(BaseModel):
+    input: str
+
 
 # This Endpoint Load the VectorDataBase and answer the User question
-@app.post('/query')
-async def get_response(input: str):
+@app.post("/query")
+async def get_response(req: QueryRequest):
     try:
-        vectorstore = load_documents(embedding_model=embeddings)
-        retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 3})
+        vectorstore = get_vectorstore()
+        retriever = vectorstore.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": 3}
+        )
         chain = get_rag_chain(retriever)
-        response = chain.invoke(input)
-        
-        # INCREMENT THE COUNTER HERE!
+        response = chain.invoke(req.input)
+
         system_stats["total_queries"] += 1
-        
+
         return {
-            "question": input,
+            "question": req.input,
             "response": response.content
         }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Query processing failed: {str(e)}"
+        )

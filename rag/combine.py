@@ -4,13 +4,20 @@ import camelot
 import pytesseract
 from PIL import Image
 import io
+import re
+
+
+def clean_text(text: str) -> str:
+    text = re.sub(r'<[^>]+>', '', text)      # strip <font>, <b>, <i>, etc.
+    text = re.sub(r'[ \t]+', ' ', text)      # normalize spaces/tabs
+    text = re.sub(r'\n{3,}', '\n\n', text)   # collapse excessive newlines
+    return text.strip()
 
 
 # Raw Documents
 def raw_document_text(pdf_path: str):
     documents = []
 
-    # Open PDF
     with pdfplumber.open(pdf_path) as pdf:
         doc_fitz = fitz.open(pdf_path)
 
@@ -20,14 +27,13 @@ def raw_document_text(pdf_path: str):
             text = page.extract_text()
             if text:
                 documents.append({
-                    "content": text,
+                    "content": clean_text(text),
                     "metadata": {
                         "page": page_index,
                         "type": "text"
                     }
                 })
 
-            
             # TABLES
             tables = camelot.read_pdf(
                 pdf_path,
@@ -38,7 +44,7 @@ def raw_document_text(pdf_path: str):
             for t_idx, table in enumerate(tables):
                 table_text = table.df.to_string(index=False)
                 documents.append({
-                    "content": table_text,
+                    "content": clean_text(table_text),
                     "metadata": {
                         "page": page_index,
                         "type": "table",
@@ -46,7 +52,6 @@ def raw_document_text(pdf_path: str):
                     }
                 })
 
-            
             # IMAGES + OCR
             page_fitz = doc_fitz[page_index - 1]
             images = page_fitz.get_images(full=True)
@@ -61,7 +66,7 @@ def raw_document_text(pdf_path: str):
 
                 if ocr_text.strip():
                     documents.append({
-                        "content": ocr_text,
+                        "content": clean_text(ocr_text),
                         "metadata": {
                             "page": page_index,
                             "type": "image",
@@ -70,5 +75,3 @@ def raw_document_text(pdf_path: str):
                     })
 
     return documents
-
-

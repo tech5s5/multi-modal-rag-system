@@ -50,18 +50,13 @@ prompt = ChatPromptTemplate.from_template(
 Answer the question strictly using the information contained in the document excerpts below.
 Do not mention the phrases "provided context", "given context", or similar meta-references.
 Do not include conversational language or assumptions.
+Do not use any HTML tags or formatting in your response.
 
 Writing guidelines:
 - Use a formal, neutral, and analytical tone.
 - Present information directly and concisely.
 - If information is missing, clearly state that it is not available in the document.
 - Do not speculate or add external knowledge.
-
-Citation rules:
-- List citations in a separate section highlighted with blue.
-- Each citation must include page number and table/figure/image reference if available.
-- Use this format exactly:
-  • Page X, Table/Figure/Image Y (if applicable)
 
 <Document Excerpts>
 {context}
@@ -71,7 +66,6 @@ Question:
 {input}
 """
 )
-
 # Get Retrieval chain
 def get_rag_chain(retriever):
     chain = (
